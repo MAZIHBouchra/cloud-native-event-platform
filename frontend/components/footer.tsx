@@ -8,9 +8,9 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">EH</span>
+                <span className="text-primary-foreground font-bold">AD</span>
               </div>
-              <span className="font-bold text-lg text-primary">EventHub</span>
+              <span className="font-bold text-lg text-primary">Adray ⴰⴷⵔⴰⵢ</span>
             </div>
             <p className="text-muted-foreground text-sm">Discover and register for amazing events.</p>
           </div>

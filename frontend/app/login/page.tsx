@@ -9,13 +9,13 @@ import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login, loading, error } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<"PARTICIPANT" | "ORGANIZER">("PARTICIPANT")
   const [formError, setFormError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,10 +27,16 @@ export default function LoginPage() {
       return
     }
 
-    if (role === "ORGANIZER") {
-      router.push("/dashboard/organizer")
-    } else {
-      router.push("/dashboard")
+    try {
+      const user = await login(email, password)
+      if (user?.role === "ORGANIZER") {
+        router.push("/dashboard/organizer")
+      } else {
+        router.push("/dashboard")
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : error || "Login failed"
+      setFormError(message)
     }
   }
 
@@ -41,54 +47,7 @@ export default function LoginPage() {
       <main className="flex-grow max-w-md mx-auto w-full px-4 py-12">
         <div className="bg-card rounded-lg border border-border shadow-sm p-8">
           <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground mb-6">Jump straight into the experience you want to explore.</p>
-
-          <div className="mb-6 space-y-3">
-            <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">I want to</span>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                {
-                  id: "PARTICIPANT",
-                  title: "Discover and attend events",
-                  description: "See the attendee dashboard.",
-                },
-                {
-                  id: "ORGANIZER",
-                  title: "Create and manage events",
-                  description: "Preview the organizer tools.",
-                },
-              ].map((option) => {
-                const isSelected = role === option.id
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setRole(option.id as typeof role)}
-                    className={cn(
-                      "rounded-xl border-2 p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-border/60 hover:border-primary/60 hover:bg-primary/5",
-                    )}
-                    aria-pressed={isSelected}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={cn(
-                          "mt-1 inline-flex h-4 w-4 flex-shrink-0 rounded-full border-2",
-                          isSelected ? "border-primary bg-primary" : "border-muted-foreground/40",
-                        )}
-                      />
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-foreground">{option.title}</p>
-                        <p className="text-xs text-muted-foreground">{option.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <p className="text-muted-foreground mb-6">Sign in to your EventHub account.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Error Message */}
@@ -123,8 +82,8 @@ export default function LoginPage() {
             </div>
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 py-2">
-              Sign In
+            <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 py-2">
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
