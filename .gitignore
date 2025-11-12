@@ -1,0 +1,38 @@
+# Root ignores
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+dist/
+build/
+
+# Environment files
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# Java / Maven
+backend/target/
+*.iml
+.idea/
+.classpath
+.project
+.settings/
+
+# Next.js / Vercel
+.next/
+.turbo/
+frontend/.vercel/
+
+# Logs and coverage
+coverage/
+*.coverage
+frontend/npm-debug.log*
+frontend/yarn-error.log*
+
+# Misc
+*.swp
+*.swo
+.vscode/
+
