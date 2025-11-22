@@ -25,3 +25,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Ignorer le fichier de configuration qui contient les clés AWS
+/src/main/resources/application.properties
