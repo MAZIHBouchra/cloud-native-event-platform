@@ -9,14 +9,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -26,14 +23,11 @@ import org.hibernate.type.SqlTypes;
 public class Event {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "char(36)")
-    @JdbcTypeCode(SqlTypes.CHAR)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "organizer_id", nullable = false, columnDefinition = "char(36)")
-    @JdbcTypeCode(SqlTypes.CHAR)
-    private UUID organizerId;
+    @Column(name = "organizer_id", nullable = false)
+    private Long organizerId;
 
     @Column(nullable = false, length = 255)
     private String title;

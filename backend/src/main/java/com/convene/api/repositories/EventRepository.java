@@ -5,12 +5,11 @@ import com.convene.api.models.EventStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface EventRepository extends JpaRepository<Event, UUID> {
+public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query(
             """
@@ -36,6 +35,6 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             @Param("endDate") LocalDateTime endDate,
             @Param("search") String search);
 
-    Optional<Event> findByIdAndStatus(UUID id, EventStatus status);
+    Optional<Event> findByIdAndStatus(Long id, EventStatus status);
 }
 

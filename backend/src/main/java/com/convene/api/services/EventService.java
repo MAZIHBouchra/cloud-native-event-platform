@@ -7,7 +7,6 @@ import com.convene.api.repositories.EventRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -25,12 +24,12 @@ public class EventService {
         String normalizedCity = normalize(city);
 
         List<Event> events =
-                eventRepository.searchEvents(EventStatus.PUBLISHED, normalizedCategory, normalizedCity, startDate, endDate, normalizedSearch);
+                eventRepository.searchEvents(null, normalizedCategory, normalizedCity, startDate, endDate, normalizedSearch);
 
         return events.stream().map(this::toResponse).toList();
     }
 
-    public Optional<EventResponseDtos> getEvent(UUID id) {
+    public Optional<EventResponseDtos> getEvent(Long id) {
         return eventRepository.findByIdAndStatus(id, EventStatus.PUBLISHED).map(this::toResponse);
     }
 

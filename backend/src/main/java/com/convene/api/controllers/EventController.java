@@ -5,7 +5,6 @@ import com.convene.api.services.EventService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -40,9 +39,9 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventResponseDtos> getEvent(@PathVariable("id") String id) {
+    public ResponseEntity<EventResponseDtos> getEvent(@PathVariable("id") Long id) {
         return eventService
-                .getEvent(UUID.fromString(id))
+                .getEvent(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
