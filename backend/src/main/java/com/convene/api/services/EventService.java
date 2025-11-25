@@ -46,7 +46,7 @@ public class EventService {
         // Champs gérés par le backend et non par le frontend
         event.setOrganizerId(1L); // TODO: Remplacer par l'ID de l'organisateur connecté (gestion de l'authentification)
         event.setAvailableSeats(eventDTO.getTotalSeats()); // Par défaut, tous les sièges sont disponibles
-        event.setStatus("UPCOMING"); // Statut par défaut (ex: UPCOMING, ACTIVE, CANCELLED)
+        event.setStatus("PUBLISHED"); // Statut par défaut (ex: UPCOMING, ACTIVE, CANCELLED)
 
         return eventRepository.save(event);
     }
