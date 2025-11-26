@@ -9,6 +9,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import axios from "axios" // IMPORTANT : Importation d'axios
 
 export default function CreateEventPage() {
   const router = useRouter()
@@ -22,7 +23,10 @@ export default function CreateEventPage() {
     address: "",
     totalSeats: "100",
   })
+  const [eventImage, setEventImage] = useState<File | null>(null) // NOUVEAU : Pour stocker le fichier image réel
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false) // NOUVEAU : Pour l'état du bouton (feedback utilisateur)
+  const [error, setError] = useState<string | null>(null) // NOUVEAU : Pour afficher les messages d'erreur
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -34,19 +38,65 @@ export default function CreateEventPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      setEventImage(file) // METTRE À JOUR : Stocke le fichier réel
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
       }
       reader.readAsDataURL(file)
+    } else {
+      setEventImage(null) // NOUVEAU : Réinitialiser si aucun fichier n'est sélectionné
+      setImagePreview(null)
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => { // METTRE À JOUR : rendre la fonction asynchrone
     e.preventDefault()
-    // In production: upload image to S3, create event in database
-    console.log("Creating event:", formData)
-    router.push("/dashboard/organizer")
+    setLoading(true) // Activer l'état de chargement
+    setError(null) // Réinitialiser l'erreur
+
+    const data = new FormData() // NOUVEAU : Utiliser FormData pour envoyer les données et le fichier
+
+    // NOUVEAU : Ajouter les données du formulaire en tant que JSON
+    // Le nom "event" DOIT correspondre à @RequestPart("event") dans le contrôleur Spring Boot
+    data.append("event", new Blob([JSON.stringify({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        eventDate: formData.eventDate,
+        eventTime: formData.eventTime,
+        city: formData.city,
+        address: formData.address,
+        totalSeats: parseInt(formData.totalSeats), // Convertir en nombre
+    })], {
+        type: "application/json"
+    }))
+
+    // NOUVEAU : Ajouter le fichier image si présent
+    // Le nom "image" DOIT correspondre à @RequestPart(value = "image", ...) dans le contrôleur Spring Boot
+    if (eventImage) {
+      data.append("image", eventImage)
+    }
+
+    try {
+      // NOUVEAU : Appel à l'API backend Spring Boot
+      const response = await axios.post("http://localhost:8080/api/events", data, {
+        headers: {
+          "Content-Type": "multipart/form-data", // IMPORTANT pour FormData
+        },
+      })
+      console.log("Event created successfully:", response.data)
+      router.push("/dashboard/organizer") // Redirection en cas de succès
+    } catch (err) {
+      console.error("Error creating event:", err)
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.error || "Failed to create event. Please try again.")
+      } else {
+        setError("An unexpected error occurred. Please check your network connection.")
+      }
+    } finally {
+      setLoading(false) // Désactiver l'état de chargement
+    }
   }
 
   return (
@@ -185,7 +235,7 @@ export default function CreateEventPage() {
               {imagePreview && (
                 <div className="mt-4">
                   <img
-                    src={imagePreview || "/placeholder.svg"}
+                    src={imagePreview} // Utilisez imagePreview pour l'affichage
                     alt="Preview"
                     className="w-full h-48 object-cover rounded-lg"
                   />
@@ -195,13 +245,14 @@ export default function CreateEventPage() {
 
             {/* Form Actions */}
             <div className="flex gap-3 pt-4">
-              <Button type="submit" className="bg-primary hover:bg-primary/90">
-                Create Event
+              <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={loading}>
+                {loading ? "Creating..." : "Create Event"} {/* Texte du bouton change pendant le chargement */}
               </Button>
               <Link href="/dashboard/organizer">
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={loading}>Cancel</Button> {/* Désactiver le bouton pendant le chargement */}
               </Link>
             </div>
+            {error && <p className="text-red-500 mt-4">{error}</p>} {/* Afficher l'erreur si elle existe */}
           </form>
         </div>
       </main>

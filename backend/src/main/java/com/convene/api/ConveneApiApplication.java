@@ -2,6 +2,10 @@ package com.convene.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
+@SpringBootApplication
+@EnableJpaAuditing // Annotation ajouté pour besoin !
 // AJOUTEZ CET IMPORT
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 
