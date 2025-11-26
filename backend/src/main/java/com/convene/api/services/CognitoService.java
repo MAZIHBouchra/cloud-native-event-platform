@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -75,19 +76,47 @@ public class CognitoService {
      * @throws CognitoIdentityProviderException if authentication fails (e.g., incorrect password, user not found).
      */
     public AuthenticationResultType signIn(SignInRequestDto request) {
-        Map<String, String> authParameters = new HashMap<>();
-        authParameters.put("USERNAME", request.getEmail());
-        authParameters.put("PASSWORD", request.getPassword());
+    // AJOUT 1 : Calculez le secret hash pour la demande de connexion
+    String secretHash = calculateSecretHash(appClientId, appClientSecret, request.getEmail());
 
-        InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
-                .authFlow(AuthFlowType.USER_PASSWORD_AUTH) // Using a more direct flow here
-                .clientId(appClientId)
-                .authParameters(authParameters)
+    Map<String, String> authParameters = new HashMap<>();
+    authParameters.put("USERNAME", request.getEmail());
+    authParameters.put("PASSWORD", request.getPassword());
+    // AJOUT 2 : Ajoutez le secret hash aux paramètres d'authentification
+    authParameters.put("SECRET_HASH", secretHash);
+
+    InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
+            .authFlow(AuthFlowType.USER_PASSWORD_AUTH)
+            .clientId(appClientId)
+            .authParameters(authParameters)
+            .build();
+
+    InitiateAuthResponse response = cognitoClient.initiateAuth(authRequest);
+    return response.authenticationResult();
+}
+
+public String getUserRole(String username) {
+    try {
+        AdminListGroupsForUserRequest request = AdminListGroupsForUserRequest.builder()
+                .userPoolId(userPoolId)
+                .username(username)
                 .build();
 
-        InitiateAuthResponse response = cognitoClient.initiateAuth(authRequest);
-        return response.authenticationResult();
+        AdminListGroupsForUserResponse response = cognitoClient.adminListGroupsForUser(request);
+        List<GroupType> groups = response.groups();
+
+        // On regarde si l'utilisateur est dans le groupe "Organizers"
+        for (GroupType group : groups) {
+            if (group.groupName().equalsIgnoreCase("Organizers")) {
+                return "ORGANIZER"; // On renvoie le mot-clé attendu par le Frontend
+            }
+        }
+        return "PARTICIPANT"; // Par défaut
+    } catch (Exception e) {
+        System.err.println("Erreur lors de la récupération du rôle : " + e.getMessage());
+        return "PARTICIPANT"; // En cas d'erreur, on considère que c'est un participant
     }
+}
 
     private String calculateSecretHash(String clientId, String clientSecret, String userName) {
         final String HMAC_SHA256_ALGORITHM = "HmacSHA256";

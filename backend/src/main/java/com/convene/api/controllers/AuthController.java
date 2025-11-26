@@ -3,6 +3,10 @@ package com.convene.api.controllers;
 import com.convene.api.dtos.SignInRequestDto;
 import com.convene.api.dtos.SignUpRequestDto;
 import com.convene.api.services.CognitoService;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +18,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.Authenticat
  */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Allows requests from any origin, useful for development
 public class AuthController {
 
     @Autowired
@@ -22,35 +25,41 @@ public class AuthController {
 
     /**
      * Endpoint for user registration.
-     * @param signUpRequest The request body containing user details.
-     * @return A success message or an error message.
      */
     @PostMapping("/signup")
     public ResponseEntity<String> signUp(@RequestBody SignUpRequestDto signUpRequest) {
         try {
             cognitoService.signUp(signUpRequest);
-            // After successful sign-up, Cognito will send a confirmation email.
-            return ResponseEntity.ok("User registered successfully! Please check your email to confirm your account.");
+            return ResponseEntity.ok("User registered successfully!");
         } catch (Exception e) {
-            // Return a more specific error message from the exception
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     /**
      * Endpoint for user authentication.
-     * @param signInRequest The request body containing user credentials.
-     * @return JWT tokens on successful login, or an error message on failure.
      */
     @PostMapping("/signin")
     public ResponseEntity<?> signIn(@RequestBody SignInRequestDto signInRequest) {
         try {
+            // 1. Authentification via Cognito
             AuthenticationResultType result = cognitoService.signIn(signInRequest);
-            // On success, send the tokens back to the frontend
-            return ResponseEntity.ok(result);
+            
+            // 2. Récupération du rôle
+            String role = cognitoService.getUserRole(signInRequest.getEmail());
+
+            // 3. Construction de la réponse JSON
+            Map<String, String> response = new HashMap<>();
+            response.put("accessToken", result.accessToken());
+            response.put("idToken", result.idToken());
+            response.put("refreshToken", result.refreshToken());
+            response.put("role", role); 
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            // For security, don't give too many details on why the login failed.
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials or user not confirmed.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Login failed: " + e.getMessage());
         }
     }
 }

@@ -53,14 +53,13 @@ export default function SignupPage() {
     }
 
     try {
-      await register(
-        formData.firstName,
-        formData.lastName,
-        formData.email,
-        formData.password,
-        formData.confirmPassword,
-        role,
-      )
+      await register({
+       firstName: formData.firstName,
+       lastName: formData.lastName,
+       email: formData.email,
+       password: formData.password,
+       role: role,
+      });
       router.push("/login")
     } catch (err) {
       setFormError(error || "Registration failed")
