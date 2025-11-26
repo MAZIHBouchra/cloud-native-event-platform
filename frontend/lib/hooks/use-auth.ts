@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { useRouter } from "next/navigation" // Important pour la redirection
+import { useRouter } from "next/navigation"
 
 // Définition de la structure d'un objet Utilisateur
 export interface User {
@@ -14,7 +14,7 @@ export interface User {
 }
 
 export function useAuth() {
-  const router = useRouter(); // Pour rediriger après login
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,16 +35,17 @@ export function useAuth() {
         throw new Error(errorText || "Échec de la connexion")
       }
 
-      // CORRECTION ICI : Correspondance avec AuthController.java
-      const data = await response.json() 
-      // Le backend renvoie : { accessToken: "...", idToken: "...", role: "...", ... }
+      const data = await response.json()
+      
+      // --- DEBUG : AFFICHER LE RÔLE DANS LA CONSOLE ---
+      console.log("📢 Login réussi ! Données reçues du Backend :", data);
+      console.log("📢 Rôle détecté :", data.role);
+      // ------------------------------------------------
 
-      // On reconstruit l'objet User pour le Frontend
-      // Note: Le backend login ne renvoie pas encore le nom/prénom, on met des placeholders ou l'email pour l'instant
       const loggedUser: User = {
-        id: data.accessToken, // On utilise le token comme ID temporaire
+        id: data.accessToken,
         email: email,
-        firstName: "", // Sera vide pour l'instant (nécessiterait un autre appel API ou décodage ID Token)
+        firstName: "", 
         lastName: "",
         role: data.role as "PARTICIPANT" | "ORGANIZER"
       };
@@ -52,22 +53,24 @@ export function useAuth() {
       // Mise à jour de l'état
       setUser(loggedUser)
       
-      // Stockage du token pour les futures requêtes
+      // Stockage du token
       if (typeof window !== "undefined") {
         localStorage.setItem("authToken", data.accessToken)
         localStorage.setItem("userRole", data.role)
       }
 
-      // Redirection automatique selon le rôle (Facultatif mais recommandé)
+      // --- CORRECTION DE LA REDIRECTION ---
       if (loggedUser.role === "ORGANIZER") {
-          router.push("/dashboard"); // ou la route pour les organisateurs
+          console.log("👉 Redirection vers le tableau de bord Organisateur");
+          router.push("/dashboard/organizer"); // LA BONNE ROUTE
       } else {
-          router.push("/events"); // ou la route pour les participants
+          console.log("👉 Redirection vers le tableau de bord Participant");
+          router.push("/dashboard"); // OU "/events" selon votre structure
       }
 
       return loggedUser
 
-    } catch (err) {
+    } catch (err: any) {
       const message = err instanceof Error ? err.message : "Login failed"
       setError(message)
       throw err
@@ -101,10 +104,9 @@ export function useAuth() {
         const successMessage = await response.text();
         console.log("Backend response:", successMessage);
         
-        // Redirection vers login après inscription réussie
         router.push("/login?success=true");
 
-      } catch (err) {
+      } catch (err: any) {
         const message = err instanceof Error ? err.message : "Registration failed"
         setError(message)
         throw err
