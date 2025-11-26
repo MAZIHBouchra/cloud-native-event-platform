@@ -1,56 +1,72 @@
+// frontend/lib/hooks/use-auth.ts
 "use client"
 
-/**
- * Custom hook for authentication state management
- * Handles user registration, login, and logout with localStorage persistence
- *
- * Usage:
- * const { user, loading, error, login, register, logout } = useAuth()
- */
-
 import { useState, useCallback } from "react"
+import { useRouter } from "next/navigation" // Important pour la redirection
 
-/** User interface representing authenticated user data */
-interface User {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  role: "PARTICIPANT" | "ORGANIZER"
+// Définition de la structure d'un objet Utilisateur
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "PARTICIPANT" | "ORGANIZER";
 }
 
 export function useAuth() {
+  const router = useRouter(); // Pour rediriger après login
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /**
-   * Login user with email and password
-   * Stores authentication token in localStorage for persistence
-   *
-   * @param email - User email address
-   * @param password - User password
-   * @returns User object on successful login
-   * @throws Error if login fails
-   */
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("/api/auth/login", {
+      // Appel au backend Java
+      const response = await fetch("http://localhost:8080/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       })
 
       if (!response.ok) {
-        throw new Error("Login failed")
+        const errorText = await response.text();
+        throw new Error(errorText || "Échec de la connexion")
       }
 
-      const data = await response.json()
-      setUser(data.user)
-      localStorage.setItem("authToken", data.token)
-      return data.user
+      // CORRECTION ICI : Correspondance avec AuthController.java
+      const data = await response.json() 
+      // Le backend renvoie : { accessToken: "...", idToken: "...", role: "...", ... }
+
+      // On reconstruit l'objet User pour le Frontend
+      // Note: Le backend login ne renvoie pas encore le nom/prénom, on met des placeholders ou l'email pour l'instant
+      const loggedUser: User = {
+        id: data.accessToken, // On utilise le token comme ID temporaire
+        email: email,
+        firstName: "", // Sera vide pour l'instant (nécessiterait un autre appel API ou décodage ID Token)
+        lastName: "",
+        role: data.role as "PARTICIPANT" | "ORGANIZER"
+      };
+
+      // Mise à jour de l'état
+      setUser(loggedUser)
+      
+      // Stockage du token pour les futures requêtes
+      if (typeof window !== "undefined") {
+        localStorage.setItem("authToken", data.accessToken)
+        localStorage.setItem("userRole", data.role)
+      }
+
+      // Redirection automatique selon le rôle (Facultatif mais recommandé)
+      if (loggedUser.role === "ORGANIZER") {
+          router.push("/dashboard"); // ou la route pour les organisateurs
+      } else {
+          router.push("/events"); // ou la route pour les participants
+      }
+
+      return loggedUser
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed"
       setError(message)
@@ -58,45 +74,36 @@ export function useAuth() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [router])
 
-  /**
-   * Register new user with validation
-   *
-   * @param firstName - User's first name
-   * @param lastName - User's last name
-   * @param email - User's email address
-   * @param password - User's password (minimum 8 characters)
-   * @param confirmPassword - Password confirmation for validation
-   * @param role - User role determining participant vs organizer experience
-   * @returns Registration response object
-   * @throws Error if registration fails or validation fails
-   */
   const register = useCallback(
-    async (
+    async (data: {
       firstName: string,
       lastName: string,
       email: string,
       password: string,
-      confirmPassword: string,
-      role: "PARTICIPANT" | "ORGANIZER",
-    ) => {
+      role: 'PARTICIPANT' | 'ORGANIZER'
+    }) => {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch("/api/auth/register", {
+        const response = await fetch("http://localhost:8080/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ firstName, lastName, email, password, confirmPassword, role }),
+          body: JSON.stringify(data), 
         })
 
         if (!response.ok) {
-          const data = await response.json()
-          throw new Error(data.error || "Registration failed")
+          const errorText = await response.text()
+          throw new Error(errorText || "Registration failed")
         }
+        
+        const successMessage = await response.text();
+        console.log("Backend response:", successMessage);
+        
+        // Redirection vers login après inscription réussie
+        router.push("/login?success=true");
 
-        const data = await response.json()
-        return data
       } catch (err) {
         const message = err instanceof Error ? err.message : "Registration failed"
         setError(message)
@@ -105,17 +112,17 @@ export function useAuth() {
         setLoading(false)
       }
     },
-    [],
+    [router],
   )
 
-  /**
-   * Logout user and clear authentication state
-   * Removes stored authentication token from localStorage
-   */
   const logout = useCallback(() => {
-    setUser(null)
-    localStorage.removeItem("authToken")
-  }, [])
+    setUser(null);
+    if (typeof window !== "undefined") {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userRole");
+    }
+    router.push("/login");
+  }, [router])
 
   return { user, loading, error, login, register, logout }
 }

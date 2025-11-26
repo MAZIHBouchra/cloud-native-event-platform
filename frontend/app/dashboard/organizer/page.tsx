@@ -1,6 +1,6 @@
-// Organizer dashboard - manage events and registrations
 "use client"
 
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { Plus, Edit2, Trash2, Users } from "lucide-react"
 import Link from "next/link"
 
 export default function OrganizerDashboardPage() {
+  const { user } = useAuth()
+  
   const myEvents = [
     {
       id: "1",
@@ -26,7 +28,8 @@ export default function OrganizerDashboardPage() {
     },
   ]
 
-  const statusColors = {
+  // J'ai ajouté ": Record<string, string>" pour corriger l'erreur TypeScript en bas
+  const statusColors: Record<string, string> = {
     PUBLISHED: "bg-green-100 text-green-800",
     DRAFT: "bg-yellow-100 text-yellow-800",
     CANCELLED: "bg-red-100 text-red-800",
@@ -34,7 +37,11 @@ export default function OrganizerDashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar isLoggedIn={true} userName="Jane" />
+      {/* MODIFICATION : On remplace "Jane" par l'email de l'utilisateur */}
+      <Navbar 
+        isLoggedIn={true} 
+        userName={user?.email ? user.email.split('@')[0] : "Organisateur"} 
+      />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-12">
         <div className="flex justify-between items-start mb-8">
@@ -75,7 +82,7 @@ export default function OrganizerDashboardPage() {
                       <td className="px-6 py-4">{event.title}</td>
                       <td className="px-6 py-4">{new Date(event.date).toLocaleDateString()}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[event.status]}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[event.status] || ''}`}>
                           {event.status}
                         </span>
                       </td>
