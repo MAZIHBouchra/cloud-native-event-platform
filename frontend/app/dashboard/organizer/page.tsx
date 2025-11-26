@@ -1,7 +1,7 @@
-// Organizer dashboard - manage events and registrations
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/hooks/use-auth" // Vient de main
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -9,31 +9,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Edit2, Trash2, Users } from "lucide-react"
 import Link from "next/link"
 
-// 1. Définition du type pour un objet "Event" avec TypeScript
-// Cela permet d'éviter les erreurs et d'avoir une meilleure autocomplétion.
+// 1. Définition du type pour un objet "Event"
 interface Event {
   id: string;
   title: string;
-  date: string; // La date est une chaîne de caractères (format ISO) venant de l'API
-  status: "PUBLISHED" | "DRAFT" | "CANCELLED"; // On définit les statuts possibles
+  date: string;
+  status: "PUBLISHED" | "DRAFT" | "CANCELLED";
   registrations: number;
 }
 
 export default function OrganizerDashboardPage() {
-  // 2. Gestion des états :
-  // - events: stocke la liste des événements récupérés
-  // - loading: indique si les données sont en cours de chargement
-  // - error: stocke un message d'erreur en cas de problème
+  // 2. COMBINAISON DES HOOKS
+  // On récupère l'utilisateur (depuis la branche auth)
+  const { user } = useAuth()
+  
+  // On gère l'état des événements (depuis la branche events)
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 3. Hook useEffect pour récupérer les données de l'API une seule fois,
-  // au moment où le composant est affiché pour la première fois.
+  // 3. Récupération des données API (Logique de HEAD)
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // Assurez-vous que cette URL correspond bien à votre backend (port 8080 par défaut pour Spring Boot)
         const response = await fetch("http://localhost:8080/api/events")
 
         if (!response.ok) {
@@ -42,41 +40,38 @@ export default function OrganizerDashboardPage() {
 
         const data = await response.json()
 
-        // On transforme les données reçues de l'API pour qu'elles correspondent à notre interface 'Event'
         const formattedEvents: Event[] = data.map((event: any) => ({
           id: event.id,
           title: event.title,
-          date: event.eventDate, // Le backend envoie 'eventDate'
+          date: event.eventDate,
           status: event.status,
-          registrations: event.totalSeats - event.availableSeats, // On calcule le nombre d'inscrits
+          registrations: event.totalSeats - (event.availableSeats || 0),
         }))
 
         setEvents(formattedEvents)
       } catch (err: any) {
         setError(err.message)
       } finally {
-        // Qu'il y ait eu une erreur ou non, le chargement est terminé
         setLoading(false)
       }
     }
 
     fetchEvents()
-  }, []) // Le tableau vide [] assure que le hook ne s'exécute qu'une fois
+  }, [])
 
-  // Définition des couleurs pour chaque statut d'événement
-  const statusColors: Record<Event["status"], string> = {
+  const statusColors: Record<string, string> = {
     PUBLISHED: "bg-green-100 text-green-800",
     DRAFT: "bg-yellow-100 text-yellow-800",
     CANCELLED: "bg-red-100 text-red-800",
   }
-const handleDelete = async (eventId: string) => {
-    // Demande de confirmation à l'utilisateur
+
+  // Fonction de suppression (Logique de HEAD)
+  const handleDelete = async (eventId: string) => {
     if (!window.confirm("Êtes-vous certain de vouloir supprimer cet événement ? Cette action est irréversible.")) {
       return;
     }
 
     try {
-      // Appel à l'API backend pour supprimer l'événement
       const response = await fetch(`http://localhost:8080/api/events/${eventId}`, {
         method: "DELETE",
       });
@@ -85,9 +80,7 @@ const handleDelete = async (eventId: string) => {
         throw new Error("La suppression de l'événement a échoué.");
       }
 
-      // Mise à jour de l'état local pour retirer l'événement de la liste
       setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
-      
       console.log("Événement supprimé avec succès !");
 
     } catch (err: any) {
@@ -95,17 +88,16 @@ const handleDelete = async (eventId: string) => {
       console.error(err.message);
     }
   };
-  // 4. Affichage conditionnel pendant le chargement
+
+  // 4. Affichage conditionnel (Chargement / Erreur)
   if (loading) {
     return (
-        // Vous pouvez remplacer ceci par un composant de chargement plus élégant (spinner, etc.)
         <div className="flex justify-center items-center min-h-screen">
             <p>Chargement des événements...</p>
         </div>
     )
   }
 
-  // Affichage en cas d'erreur
   if (error) {
     return (
         <div className="flex justify-center items-center min-h-screen text-red-500">
@@ -114,10 +106,14 @@ const handleDelete = async (eventId: string) => {
     )
   }
 
-  // 5. Affichage principal du composant une fois les données chargées
+  // 5. Rendu principal
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar isLoggedIn={true} userName="Jane" />
+      {/* Navbar dynamique (Vient de main) */}
+      <Navbar 
+        isLoggedIn={true} 
+        userName={user?.email ? user.email.split('@')[0] : "Organisateur"} 
+      />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-12">
         <div className="flex justify-between items-start mb-8">
@@ -169,10 +165,10 @@ const handleDelete = async (eventId: string) => {
                       <td className="px-6 py-4 text-center">{event.registrations}</td>
                       <td className="px-6 py-4 flex gap-2">
                         <Link href={`/dashboard/organizer/edit-event/${event.id}`}>
-                        <Button variant="outline" size="sm">
-                          <Edit2 className="w-4 h-4 mr-1" />
-                          Modifier
-                        </Button>
+                            <Button variant="outline" size="sm">
+                            <Edit2 className="w-4 h-4 mr-1" />
+                            Modifier
+                            </Button>
                         </Link>
                         <Button variant="destructive" size="sm" onClick={() => handleDelete(event.id)}>
                           <Trash2 className="w-4 h-4 mr-1" />
@@ -183,7 +179,6 @@ const handleDelete = async (eventId: string) => {
                   ))}
                 </tbody>
               </table>
-              {/* Message si aucun événement n'est trouvé */}
               {events.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">
                   Vous n'avez encore créé aucun événement.
@@ -211,7 +206,6 @@ const handleDelete = async (eventId: string) => {
                   </div>
                 </div>
               ))}
-               {/* Message si aucun événement n'est trouvé */}
               {events.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">
                   Aucun événement à afficher.
