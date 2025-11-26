@@ -1,19 +1,29 @@
 package com.convene.api.dtos;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-/**
- * Data Transfer Object for user registration requests.
- * It carries the necessary information from the client to the server to create a new user account.
- */
-@Data // Génère automatiquement les getters, setters, toString(), equals(), hashCode()
-@NoArgsConstructor // Génère un constructeur sans arguments
 public class SignUpRequestDto {
 
     private String firstName;
     private String lastName;
     private String email;
     private String password;
-    private String role; // Expected values: "ORGANIZER" or "PARTICIPANT"
+    private String role;
+
+    // Constructeur vide
+    public SignUpRequestDto() {}
+
+    // Getters et Setters MANUELS
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

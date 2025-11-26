@@ -3,73 +3,29 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-
-// On n'utilise plus le hook useAuth pour le login direct, 
-// car il contient probablement l'ancienne logique mockée.
-// import { useAuth } from "@/lib/hooks/use-auth"
+// 👇 ON RÉACTIVE L'IMPORT DU HOOK
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export default function LoginPage() {
-  const router = useRouter()
+  // 👇 ON UTILISE LE HOOK AU LIEU DE TOUT RECODER
+  const { login, loading, error } = useAuth()
   
-  // États locaux pour gérer le formulaire
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [formError, setFormError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setFormError("")
-    setIsLoading(true)
-
+    
     if (!email || !password) {
-      setFormError("Veuillez remplir tous les champs")
-      setIsLoading(false)
+      // On peut gérer une erreur locale si on veut, ou laisser le hook faire
       return
     }
 
-    try {
-      // 1. APPEL DIRECT À VOTRE ROUTE API (Celle qu'on a réparée)
-      console.log("Envoi de la requête de login...");
-      
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || "Échec de la connexion")
-      }
-
-      // 2. SUCCÈS !
-      console.log("Login réussi, token reçu :", data.token)
-      
-      // Ici, idéalement, on stockerait le token (localStorage ou Context)
-      // Pour l'instant, on redirige juste pour prouver que ça marche.
-      localStorage.setItem("token", data.token); // Stockage temporaire
-
-      // Redirection selon le rôle (si renvoyé par le backend)
-      if (data.role === "ORGANIZER") {
-        router.push("/dashboard/organizer")
-      } else {
-        router.push("/dashboard")
-      }
-
-    } catch (err: any) {
-      console.error("Erreur Login:", err)
-      setFormError(err.message || "Une erreur est survenue")
-    } finally {
-      setIsLoading(false)
-    }
+    // 👇 Appel simple à la fonction login du hook (qui contient la bonne URL /signin)
+    await login(email, password)
   }
 
   return (
@@ -82,10 +38,10 @@ export default function LoginPage() {
           <p className="text-muted-foreground mb-6">Connectez-vous à votre compte EventHub.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Message d'erreur */}
-            {formError && (
+            {/* 👇 Affichage de l'erreur venant du Hook */}
+            {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
-                {formError}
+                {error}
               </div>
             )}
 
@@ -98,6 +54,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="w-full px-4 py-2 rounded-lg border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               />
             </div>
 
@@ -110,12 +67,13 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Votre mot de passe"
                 className="w-full px-4 py-2 rounded-lg border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               />
             </div>
 
             {/* Bouton Submit */}
-            <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 py-2">
-              {isLoading ? "Connexion en cours..." : "Se connecter"}
+            <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 py-2">
+              {loading ? "Connexion en cours..." : "Se connecter"}
             </Button>
           </form>
 
