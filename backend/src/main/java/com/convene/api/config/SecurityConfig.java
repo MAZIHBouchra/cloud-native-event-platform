@@ -27,14 +27,13 @@ public class SecurityConfig {
 
             // 3. Configuration des accès URL
             .authorizeHttpRequests(auth -> auth
-                // ✅ VOS ENDPOINTS (Authentification)
+                // VOS ENDPOINTS (Authentification)
                 .requestMatchers("/api/auth/**").permitAll()
                 
-                // ✅ ENDPOINTS EVENTS (Code fusionné)
-                // On autorise tout pour l'instant pour faciliter le développement
+                // ENDPOINTS EVENTS (Code fusionné)
                 .requestMatchers("/api/events/**").permitAll()
                 
-                // ✅ CORS PRE-FLIGHT (Indispensable pour les navigateurs)
+                // CORS PRE-FLIGHT (Indispensable pour les navigateurs)
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
                 // Le reste nécessite d'être connecté

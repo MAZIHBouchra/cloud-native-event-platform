@@ -1,9 +1,8 @@
-// Dans app/dashboard/organizer/edit-event/[id]/page.tsx
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useAuth } from "@/lib/hooks/use-auth" // 👇 Import de l'auth
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -11,13 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-// On peut réutiliser ou redéfinir l'interface Event
+// Interface des données
 interface EventData {
   id: string;
   title: string;
   description: string;
   category: string;
-  eventDate: string; // Garder le format ISO pour l'input datetime-local
+  eventDate: string;
   locationCity: string;
   locationAddress: string;
   totalSeats: number;
@@ -26,19 +25,22 @@ interface EventData {
   imageUrl: string;
 }
 
-
+// ⚠️ IMPORTANT : Pas de "async" ici pour un composant client !
 export default function EditEventPage() {
-  const router = useRouter() // Pour la redirection après la mise à jour
-  const params = useParams() // Pour récupérer l'ID de l'URL
-  const eventId = params.id as string;
+  const router = useRouter()
+  const params = useParams()
+  // Utilisation sécurisée de l'ID (peut être un tableau ou undefined)
+  const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const { user } = useAuth(); // 👇 Récupération de l'utilisateur connecté
 
   const [eventData, setEventData] = useState<Partial<EventData>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 1. Récupérer les données de l'événement à éditer
+  // 1. Chargement des données
   useEffect(() => {
-    if (!eventId) return; // Ne rien faire si l'ID n'est pas encore disponible
+    if (!eventId) return;
 
     const fetchEventDetails = async () => {
       try {
@@ -47,10 +49,15 @@ export default function EditEventPage() {
           throw new Error("Impossible de récupérer les détails de l'événement.");
         }
         const data = await response.json();
-        // Le format de la date doit être compatible avec l'input `datetime-local`
-        if(data.eventDate) {
-            data.eventDate = data.eventDate.substring(0, 16); // Format YYYY-MM-DDTHH:mm
+        
+        // Formatage de la date pour l'input HTML (YYYY-MM-DDTHH:mm)
+        if(data.eventDate && data.eventDate.length >= 10) {
+            // Si c'est juste une date YYYY-MM-DD, on ajoute une heure par défaut ou on garde tel quel
+            // Si c'est ISO, on coupe. Ici on suppose que le backend renvoie YYYY-MM-DD
+            // On adapte pour que l'input ne plante pas
+            data.eventDate = data.eventDate.substring(0, 10); 
         }
+        
         setEventData(data);
       } catch (err: any) {
         setError(err.message);
@@ -60,19 +67,20 @@ export default function EditEventPage() {
     };
 
     fetchEventDetails();
-  }, [eventId]); // Le hook se redéclenche si eventId change
+  }, [eventId]);
 
-  // 2. Gérer la mise à jour du formulaire
+  // 2. Gestion des changements (Input texte)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEventData(prev => ({ ...prev, [name]: value }));
   };
   
+  // Gestion des changements (Select)
   const handleSelectChange = (name: string, value: string) => {
     setEventData(prev => ({ ...prev, [name]: value }));
   }
 
-  // 3. Envoyer les données mises à jour au backend
+  // 3. Soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -90,8 +98,8 @@ export default function EditEventPage() {
         throw new Error("La mise à jour de l'événement a échoué.");
       }
 
-      alert("Événement mis à jour avec succès !");
-      router.push("/dashboard/organizer"); // Rediriger vers le tableau de bord
+      // Succès : on redirige
+      router.push("/dashboard/organizer"); 
       
     } catch (err: any) {
       setError(err.message);
@@ -103,7 +111,12 @@ export default function EditEventPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar isLoggedIn={true} userName="Jane" />
+      {/* Navbar dynamique */}
+      <Navbar 
+        isLoggedIn={true} 
+        userName={user?.email ? user.email.split('@')[0] : "Organisateur"} 
+      />
+
       <main className="flex-grow max-w-4xl mx-auto w-full px-4 py-12">
         <h1 className="text-4xl font-bold mb-8">Modifier l'événement</h1>
         
@@ -119,8 +132,14 @@ export default function EditEventPage() {
           </div>
 
           <div>
-            <label htmlFor="eventDate" className="block text-sm font-medium mb-2">Date et heure</label>
-            <Input id="eventDate" name="eventDate" type="datetime-local" value={eventData.eventDate || ''} onChange={handleChange} required />
+            <label htmlFor="eventDate" className="block text-sm font-medium mb-2">Date</label>
+            {/* Type date car votre backend utilise LocalDate (pas d'heure) */}
+            <Input id="eventDate" name="eventDate" type="date" value={eventData.eventDate || ''} onChange={handleChange} required />
+          </div>
+
+          <div>
+            <label htmlFor="city" className="block text-sm font-medium mb-2">Ville</label>
+            <Input id="city" name="city" value={eventData.locationCity || ''} onChange={(e) => setEventData({...eventData, locationCity: e.target.value})} required />
           </div>
 
           <div>
@@ -136,8 +155,6 @@ export default function EditEventPage() {
                 </SelectContent>
             </Select>
           </div>
-          
-          {/* Ajoutez ici d'autres champs si nécessaire (ville, adresse, places, etc.) */}
 
           <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={() => router.back()}>

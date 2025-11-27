@@ -14,14 +14,8 @@ import java.util.Optional;
 public interface EventRepository extends JpaRepository<Event, Long> {
 
     /**
-     * Recherche avec filtres optionnels :
-     * - status (String)
-     * - category (String)
-     * - city (String)
-     * - startDate / endDate (LocalDate)
-     * - search (texte appliqué sur title OR description)
-     *
-     * On utilise LOWER(...) et LIKE pour une recherche insensible à la casse.
+     * Recherche avec filtres optionnels.
+     * Utilise String pour le statut et LocalDate pour les dates.
      */
     @Query("""
         SELECT e FROM Event e

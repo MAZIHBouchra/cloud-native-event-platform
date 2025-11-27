@@ -13,27 +13,29 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final S3Service s3Service; // Injection du service S3 de Salma
 
-    public EventService(EventRepository eventRepository) {
+    // Constructeur avec injection des dépendances
+    public EventService(EventRepository eventRepository, S3Service s3Service) {
         this.eventRepository = eventRepository;
+        this.s3Service = s3Service;
     }
 
     /**
-     * Crée un nouvel événement.
+     * Crée un nouvel événement avec upload d'image vers S3.
      */
     public Event createEvent(EventRequestDTO eventDTO, MultipartFile imageFile) throws IOException {
         String imageUrl = null;
+        
+        // Gestion de l'image via le S3Service de Salma
         if (imageFile != null && !imageFile.isEmpty()) {
-            // Logique d'upload d'image fictive (Mock)
-            String fileName = UUID.randomUUID().toString() + "-" + imageFile.getOriginalFilename();
-            // EN PRODUCTION: Uploader vers AWS S3
-            imageUrl = "http://example.com/images/" + fileName; 
+            // On appelle uploadImage avec le fichier et le nom du dossier "events"
+            imageUrl = s3Service.uploadImage(imageFile, "events");
         }
 
         Event event = new Event();
@@ -44,13 +46,15 @@ public class EventService {
         // Conversion String -> LocalDate
         event.setEventDate(LocalDate.parse(eventDTO.getEventDate()));
         event.setTotalSeats(eventDTO.getTotalSeats());
-        event.setImageUrl(imageUrl);
+        
+        // Sauvegarde de l'URL S3 (ou null si pas d'image)
+        event.setImageUrl(imageUrl); 
         
         event.setLocationCity(eventDTO.getCity());
         event.setLocationAddress(eventDTO.getAddress());
 
         // Champs gérés par le backend
-        event.setOrganizerId(1L); // TODO: Récupérer l'ID de l'utilisateur connecté via le Token
+        event.setOrganizerId(1L); // TODO: Plus tard, récupérer l'ID depuis le token
         event.setAvailableSeats(eventDTO.getTotalSeats());
         event.setStatus("PUBLISHED");
 
@@ -58,7 +62,7 @@ public class EventService {
     }
 
     /**
-     * Recherche publique : ne renvoie que les événements dont le status = "PUBLISHED".
+     * Recherche publique des événements.
      */
     public List<EventResponseDtos> getEvents(
             String search, String category, String city, LocalDate startDate, LocalDate endDate) {
@@ -74,21 +78,18 @@ public class EventService {
     }
 
     /**
-     * Récupère un événement public (status = "PUBLISHED").
+     * Récupère un événement par ID.
      */
     public Optional<EventResponseDtos> getEvent(Long id) {
         return eventRepository.findByIdAndStatus(id, "PUBLISHED").map(this::toResponse);
     }
 
     /**
-     * Met à jour un événement existant.
+     * Met à jour un événement.
      */
     @Transactional
     public Optional<EventResponseDtos> updateEvent(Long id, EventResponseDtos eventDetails) {
         return eventRepository.findById(id).map(existingEvent -> {
-            // Mise à jour des champs
-            // Note: On suppose ici que EventResponseDtos est un Java Record (d'où les méthodes sans get)
-            // Si c'est une classe classique, remplacez .title() par .getTitle(), etc.
             existingEvent.setTitle(eventDetails.title());
             existingEvent.setDescription(eventDetails.description());
             existingEvent.setCategory(eventDetails.category());
@@ -111,6 +112,8 @@ public class EventService {
     @Transactional
     public boolean deleteEvent(Long id) {
         if (eventRepository.existsById(id)) {
+            // Optionnel : On pourrait aussi supprimer l'image de S3 ici
+            // Mais pour l'instant, on supprime juste l'événement de la BDD
             eventRepository.deleteById(id);
             return true;
         }
