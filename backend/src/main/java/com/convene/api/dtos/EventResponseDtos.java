@@ -1,11 +1,8 @@
 package com.convene.api.dtos;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
 import java.time.LocalDate;
 
-import com.convene.api.models.EventStatus;
-
+// On utilise un record, c'est moderne et concis pour les DTOs
 public record EventResponseDtos(
     Long id,
     String title,

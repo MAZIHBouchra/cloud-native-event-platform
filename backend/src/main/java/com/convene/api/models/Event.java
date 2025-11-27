@@ -2,8 +2,7 @@ package com.convene.api.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -30,27 +29,26 @@ public class Event {
     @Column(nullable = false)
     private String category;
 
-    @Column(name = "image_url") // image_url dans la BDD
+    @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "event_date", nullable = false) // event_date dans la BDD
+    @Column(name = "event_date", nullable = false)
     private LocalDate eventDate;
-    
 
-    @Column(name = "location_city", nullable = false) // location_city dans la BDD
+    @Column(name = "location_city", nullable = false)
     private String locationCity;
 
-    @Column(name = "location_address", nullable = false) // location_address dans la BDD
+    @Column(name = "location_address", nullable = false)
     private String locationAddress;
 
-    @Column(name = "total_seats", nullable = false) // total_seats dans la BDD
+    @Column(name = "total_seats", nullable = false)
     private Integer totalSeats;
 
-    @Column(name = "available_seats", nullable = false) //  available_seats dans la BDD
+    @Column(name = "available_seats", nullable = false)
     private Integer availableSeats; 
 
     @Column(nullable = false)
-    private String status; // Ex: "Active", "Cancelled", "Upcoming"
+    private String status; // Ex: "PUBLISHED", "DRAFT"
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -63,6 +61,7 @@ public class Event {
     // --- Constructeurs ---
     public Event() {}
 
+    // --- Getters et Setters ---
     public Long getId() { 
         return id;
     }

@@ -44,6 +44,7 @@ public class EventController {
             return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
         } catch (IOException e) {
             Map<String, String> errorResponse = new HashMap<>();
+            // LIGNE AJOUTÉE POUR VOIR L'ERREUR
             errorResponse.put("error", "Error processing image: " + e.getMessage());
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {

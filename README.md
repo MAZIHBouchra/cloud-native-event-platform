@@ -42,7 +42,18 @@ Il est réalisé dans le cadre du module "Cloud Computing" de l'Université Ibn 
     cd backend
     ```
 
-2.  **Lancez l'application :**
+2.  **Configurez vos variables d'environnement pour la base de données MySQL :**
+
+    ```bash
+    # Exemple
+    set DB_URL=jdbc:mysql://localhost:3306/convene?useSSL=false&serverTimezone=UTC
+    set DB_USERNAME=convene_user
+    set DB_PASSWORD=secret
+    ```
+
+    > Pour initialiser le schéma et quelques données d'exemple, exécutez le script `frontend/scripts/init-database.sql` sur votre instance MySQL.
+
+3.  **Lancez l'application :**
     ```bash
     ./mvnw spring-boot:run
     ```
@@ -60,7 +71,14 @@ Il est réalisé dans le cadre du module "Cloud Computing" de l'Université Ibn 
     ```bash
     npm install
     ```
-3.  **Lancez le serveur de développement :**
+3.  **Définissez l'URL de l'API backend :**
+
+    ```bash
+    # Exemple
+    set NEXT_PUBLIC_EVENTS_API_URL=http://localhost:8080
+    ```
+
+4.  **Lancez le serveur de développement :**
     ```bash
     npm run dev
     ```

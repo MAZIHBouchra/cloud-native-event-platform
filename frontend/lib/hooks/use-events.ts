@@ -36,7 +36,16 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
  * const { events, isLoading, error } = useEvents({ city: 'New York', category: 'Technology' })
  */
 export function useEvents(filters?: Record<string, string>) {
-  const query = new URLSearchParams(filters || {}).toString()
+  // Only include non-empty filter values in the query
+  const queryParams = new URLSearchParams()
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && value.trim() !== "") {
+        queryParams.append(key, value.trim())
+      }
+    })
+  }
+  const query = queryParams.toString()
   const url = `/api/events${query ? `?${query}` : ""}`
 
   const { data, error, isLoading } = useSWR<{ events: Event[] }>(url, fetcher)

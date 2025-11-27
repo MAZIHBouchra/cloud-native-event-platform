@@ -2,17 +2,21 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/hooks/use-auth" // Hook d'authentification
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import axios from "axios" // IMPORTANT : Importation d'axios
+import axios from "axios" // Pour les requêtes HTTP
 
 export default function CreateEventPage() {
   const router = useRouter()
+  
+  // 👇 C'EST ICI LA CORRECTION : On récupère l'utilisateur connecté
+  const { user } = useAuth() 
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -23,10 +27,11 @@ export default function CreateEventPage() {
     address: "",
     totalSeats: "100",
   })
-  const [eventImage, setEventImage] = useState<File | null>(null) // NOUVEAU : Pour stocker le fichier image réel
+  
+  const [eventImage, setEventImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false) // NOUVEAU : Pour l'état du bouton (feedback utilisateur)
-  const [error, setError] = useState<string | null>(null) // NOUVEAU : Pour afficher les messages d'erreur
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -38,70 +43,77 @@ export default function CreateEventPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setEventImage(file) // METTRE À JOUR : Stocke le fichier réel
+      setEventImage(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
       }
       reader.readAsDataURL(file)
     } else {
-      setEventImage(null) // NOUVEAU : Réinitialiser si aucun fichier n'est sélectionné
+      setEventImage(null)
       setImagePreview(null)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => { // METTRE À JOUR : rendre la fonction asynchrone
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true) // Activer l'état de chargement
-    setError(null) // Réinitialiser l'erreur
+    setLoading(true)
+    setError(null)
 
-    const data = new FormData() // NOUVEAU : Utiliser FormData pour envoyer les données et le fichier
+    // Création de l'objet FormData pour envoyer fichier + données
+    const data = new FormData()
 
-    // NOUVEAU : Ajouter les données du formulaire en tant que JSON
-    // Le nom "event" DOIT correspondre à @RequestPart("event") dans le contrôleur Spring Boot
-    data.append("event", new Blob([JSON.stringify({
+    // 1. Ajout des données de l'événement (partie 'event')
+    // Le backend attend un JSON stringifié pour la partie "event"
+    const eventJson = JSON.stringify({
         title: formData.title,
         description: formData.description,
         category: formData.category,
-        eventDate: formData.eventDate,
-        eventTime: formData.eventTime,
+        eventDate: formData.eventDate, // Format YYYY-MM-DD
+        // eventTime n'est pas dans le DTO Java, on l'ignore ou on l'ajoute si vous modifiez le Java
         city: formData.city,
         address: formData.address,
-        totalSeats: parseInt(formData.totalSeats), // Convertir en nombre
-    })], {
-        type: "application/json"
-    }))
+        totalSeats: parseInt(formData.totalSeats),
+    });
 
-    // NOUVEAU : Ajouter le fichier image si présent
-    // Le nom "image" DOIT correspondre à @RequestPart(value = "image", ...) dans le contrôleur Spring Boot
+    data.append("event", new Blob([eventJson], { type: "application/json" }))
+
+    // 2. Ajout de l'image (partie 'image')
     if (eventImage) {
       data.append("image", eventImage)
     }
 
     try {
-      // NOUVEAU : Appel à l'API backend Spring Boot
+      // Envoi au Backend sur le port 8080
       const response = await axios.post("http://localhost:8080/api/events", data, {
         headers: {
-          "Content-Type": "multipart/form-data", // IMPORTANT pour FormData
+          "Content-Type": "multipart/form-data",
         },
       })
+      
       console.log("Event created successfully:", response.data)
-      router.push("/dashboard/organizer") // Redirection en cas de succès
-    } catch (err) {
+      router.push("/dashboard/organizer") // Redirection vers le tableau de bord
+      
+    } catch (err: any) {
       console.error("Error creating event:", err)
       if (axios.isAxiosError(err) && err.response) {
-        setError(err.response.data.error || "Failed to create event. Please try again.")
+        // Affiche l'erreur renvoyée par le backend (ex: erreur S3)
+        setError(err.response.data.error || "Failed to create event.")
       } else {
-        setError("An unexpected error occurred. Please check your network connection.")
+        setError("An unexpected error occurred.")
       }
     } finally {
-      setLoading(false) // Désactiver l'état de chargement
+      setLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar isLoggedIn={true} userName="Jane" />
+      {/* Navbar avec gestion sécurisée du nom utilisateur */}
+      <Navbar 
+        isLoggedIn={true} 
+        userName={user?.email ? user.email.split('@')[0] : "Organisateur"} 
+      />
 
       <main className="flex-grow max-w-4xl mx-auto w-full px-4 py-12">
         <div className="mb-8">
@@ -235,7 +247,7 @@ export default function CreateEventPage() {
               {imagePreview && (
                 <div className="mt-4">
                   <img
-                    src={imagePreview} // Utilisez imagePreview pour l'affichage
+                    src={imagePreview}
                     alt="Preview"
                     className="w-full h-48 object-cover rounded-lg"
                   />
@@ -246,13 +258,15 @@ export default function CreateEventPage() {
             {/* Form Actions */}
             <div className="flex gap-3 pt-4">
               <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={loading}>
-                {loading ? "Creating..." : "Create Event"} {/* Texte du bouton change pendant le chargement */}
+                {loading ? "Creating..." : "Create Event"}
               </Button>
               <Link href="/dashboard/organizer">
-                <Button variant="outline" disabled={loading}>Cancel</Button> {/* Désactiver le bouton pendant le chargement */}
+                <Button variant="outline" disabled={loading}>Cancel</Button>
               </Link>
             </div>
-            {error && <p className="text-red-500 mt-4">{error}</p>} {/* Afficher l'erreur si elle existe */}
+            
+            {/* Affichage des erreurs */}
+            {error && <p className="text-red-500 mt-4 font-medium">{error}</p>}
           </form>
         </div>
       </main>

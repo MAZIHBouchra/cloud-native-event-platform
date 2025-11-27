@@ -1,43 +1,60 @@
-/**
- * Event Details Endpoint (GET /api/events/[id])
- *
- * Retrieves detailed information for a specific event
- * Returns event details including organizer info, full description, and seat availability
- *
- * Production Implementation:
- * - Query database for event by ID
- * - Include related organizer information
- * - Verify event is published before returning
- * - Add caching for frequently accessed events
- */
+import { NextResponse } from "next/server"
 
-import { type NextRequest, NextResponse } from "next/server"
+const API_BASE_URL = process.env.EVENTS_API_URL ?? process.env.NEXT_PUBLIC_EVENTS_API_URL ?? "http://localhost:8080"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+interface BackendEvent {
+  id: string
+  title: string
+  description: string
+  category?: string
+  imageUrl?: string
+  eventDate: string
+  city: string
+  address: string
+  totalSeats: number
+  availableSeats: number
+}
+
+type RouteParams = {
+  params: Promise<{ id: string }>
+}
+
+export async function GET(_: Request, route: RouteParams) {
   try {
-    const { id } = await params
+    const { id } = await route.params
+    const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    })
 
-    // Production: Query specific event from database
-    // const event = await db.query('SELECT * FROM events WHERE id = ? AND status = "PUBLISHED"', [id])
-    // if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-
-    const mockEvent = {
-      id: id,
-      title: "Web Development Masterclass",
-      description:
-        "Learn modern web development with React, Next.js, TailwindCSS, and best practices for building scalable applications.",
-      date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      time: "10:00 AM - 6:00 PM",
-      city: "New York",
-      address: "123 Tech Street, New York, NY 10001",
-      category: "Technology",
-      remainingSeats: 85,
-      totalSeats: 100,
-      organizer: "Tech Academy",
-      imageUrl: "/web-development-masterclass.jpg",
+    if (response.status === 404) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ event: mockEvent }, { status: 200 })
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Backend event API error:", response.status, errorText)
+      return NextResponse.json({ error: "Failed to load event" }, { status: 502 })
+    }
+
+    const event = (await response.json()) as BackendEvent
+
+    const normalized = {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      category: event.category,
+      imageUrl: event.imageUrl ?? "/placeholder.jpg",
+      date: event.eventDate,
+      city: event.city,
+      address: event.address,
+      totalSeats: event.totalSeats,
+      remainingSeats: event.availableSeats,
+    }
+
+    return NextResponse.json({ event: normalized })
   } catch (error) {
     console.error("Event fetch error:", error)
     return NextResponse.json({ error: "Failed to fetch event" }, { status: 500 })
