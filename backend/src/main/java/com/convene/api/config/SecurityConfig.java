@@ -10,6 +10,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+// IMPORT IMPORTANT À AJOUTER
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import java.util.List;
 
 @Configuration
@@ -22,44 +25,31 @@ public class SecurityConfig {
             // 1. Désactiver CSRF (Indispensable pour les API REST)
             .csrf(AbstractHttpConfigurer::disable)
 
-            // 2. Activer CORS (Pour que localhost:3000 puisse parler à localhost:8080)
+            // 2. Activer CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
             // 3. Configuration des accès URL
             .authorizeHttpRequests(auth -> auth
-                // VOS ENDPOINTS (Authentification)
                 .requestMatchers("/api/auth/**").permitAll()
-                
-                // ENDPOINTS EVENTS (Code fusionné)
-                .requestMatchers("/api/events/**").permitAll()
-                
-                // CORS PRE-FLIGHT (Indispensable pour les navigateurs)
+                .requestMatchers("/api/events/**").permitAll() // Lecture publique des événements
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-
-                // Le reste nécessite d'être connecté
-                .anyRequest().authenticated()
-            );
+                .anyRequest().authenticated() // Le reste (Inscriptions) nécessite un Token
+            )
+            
+            // C'EST LA LIGNE MAGIQUE QUI MANQUAIT !
+            // Elle dit à Spring : "Vérifie les tokens JWT (Bearer Token) avec Cognito"
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()));
 
         return http.build();
     }
 
-    /**
-     * Configuration CORS pour autoriser le Frontend Next.js
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Autoriser l'origine du Frontend
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        
-        // Autoriser les méthodes HTTP courantes
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        
-        // Autoriser tous les en-têtes (Authorization, Content-Type...)
         configuration.setAllowedHeaders(List.of("*"));
-        
-        // Autoriser l'envoi de cookies/credentials si besoin
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

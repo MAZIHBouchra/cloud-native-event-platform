@@ -62,88 +62,45 @@ public class Event {
     public Event() {}
 
     // --- Getters et Setters ---
-    public Long getId() { 
-        return id;
-    }
-    public void setId(Long id) { 
-        this.id = id; 
-    }
-    public Long getOrganizerId() {
-        return organizerId; 
-    }
-    public void setOrganizerId(Long organizerId) {
-        this.organizerId = organizerId; 
-    }
-    public String getTitle() {
-        return title; 
-    }
-    public void setTitle(String title) { 
-        this.title = title; 
-    }
-    public String getDescription() { 
-        return description; 
-    }
-    public void setDescription(String description) {
-        this.description = description; 
-    }
-    public String getCategory() {
-        return category; 
-    }
-    public void setCategory(String category) {
-        this.category = category; 
-    }
-    public String getImageUrl() { 
-        return imageUrl; 
-    }
-    public void setImageUrl(String imageUrl) { 
-        this.imageUrl = imageUrl; 
-    }
-    public LocalDate getEventDate() { 
-        return eventDate; 
-    }
-    public void setEventDate(LocalDate eventDate) { 
-        this.eventDate = eventDate; 
-    }
-    public String getLocationCity() { 
-        return locationCity; 
-    }
-    public void setLocationCity(String locationCity) {
-         this.locationCity = locationCity; 
-    }
-    public String getLocationAddress() { 
-        return locationAddress; 
-    }
-    public void setLocationAddress(String locationAddress) { 
-        this.locationAddress = locationAddress; 
-    }
-    public Integer getTotalSeats() { 
-        return totalSeats; 
-    }
-    public void setTotalSeats(Integer totalSeats) { 
-        this.totalSeats = totalSeats; 
-    }
-    public Integer getAvailableSeats() { 
-        return availableSeats; 
-    }
-    public void setAvailableSeats(Integer availableSeats) { 
-        this.availableSeats = availableSeats; 
-    }
-    public String getStatus() { 
-        return status; 
-    }
-    public void setStatus(String status) { 
-        this.status = status; 
-    }
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    public void setCreatedAt(LocalDateTime createdAt) { 
-        this.createdAt = createdAt; 
-    }
-    public LocalDateTime getUpdatedAt() { 
-        return updatedAt; 
-    }
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-         this.updatedAt = updatedAt; 
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getOrganizerId() { return organizerId; }
+    public void setOrganizerId(Long organizerId) { this.organizerId = organizerId; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public LocalDate getEventDate() { return eventDate; }
+    public void setEventDate(LocalDate eventDate) { this.eventDate = eventDate; }
+
+    public String getLocationCity() { return locationCity; }
+    public void setLocationCity(String locationCity) { this.locationCity = locationCity; }
+
+    public String getLocationAddress() { return locationAddress; }
+    public void setLocationAddress(String locationAddress) { this.locationAddress = locationAddress; }
+
+    public Integer getTotalSeats() { return totalSeats; }
+    public void setTotalSeats(Integer totalSeats) { this.totalSeats = totalSeats; }
+
+    public Integer getAvailableSeats() { return availableSeats; }
+    public void setAvailableSeats(Integer availableSeats) { this.availableSeats = availableSeats; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
