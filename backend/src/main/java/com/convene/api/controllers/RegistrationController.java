@@ -66,4 +66,15 @@ public class RegistrationController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * GET /api/registrations/event/{eventId}
+     * Récupérer tous les participants d'un événement (Pour l'organisateur).
+     */
+    @GetMapping("/event/{eventId}")
+    public ResponseEntity<List<Registration>> getEventRegistrations(@PathVariable Long eventId) {
+        // Idéalement, on devrait vérifier ici que l'utilisateur connecté est bien l'organisateur de cet événement
+        List<Registration> registrations = registrationService.getEventRegistrations(eventId);
+        return ResponseEntity.ok(registrations);
+    }
 }

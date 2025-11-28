@@ -6,11 +6,9 @@ import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-// 👇 ON RÉACTIVE L'IMPORT DU HOOK
 import { useAuth } from "@/lib/hooks/use-auth"
 
 export default function LoginPage() {
-  // 👇 ON UTILISE LE HOOK AU LIEU DE TOUT RECODER
   const { login, loading, error } = useAuth()
   
   const [email, setEmail] = useState("")
@@ -20,11 +18,9 @@ export default function LoginPage() {
     e.preventDefault()
     
     if (!email || !password) {
-      // On peut gérer une erreur locale si on veut, ou laisser le hook faire
       return
     }
 
-    // 👇 Appel simple à la fonction login du hook (qui contient la bonne URL /signin)
     await login(email, password)
   }
 
@@ -34,11 +30,11 @@ export default function LoginPage() {
 
       <main className="flex-grow max-w-md mx-auto w-full px-4 py-12">
         <div className="bg-card rounded-lg border border-border shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-2">Connexion</h1>
-          <p className="text-muted-foreground mb-6">Connectez-vous à votre compte EventHub.</p>
+          <h1 className="text-3xl font-bold mb-2">Log In</h1>
+          <p className="text-muted-foreground mb-6">Log in to your Adray ⴰⴷⵔⴰⵢ account.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* 👇 Affichage de l'erreur venant du Hook */}
+            {/* Affichage de l'erreur */}
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
                 {error}
@@ -58,29 +54,29 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Mot de passe */}
+            {/* Password */}
             <div>
-              <label className="block text-sm font-medium mb-2">Mot de passe</label>
+              <label className="block text-sm font-medium mb-2">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Votre mot de passe"
+                placeholder="Your password"
                 className="w-full px-4 py-2 rounded-lg border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary"
                 required
               />
             </div>
 
-            {/* Bouton Submit */}
+            {/* Submit Button */}
             <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 py-2">
-              {loading ? "Connexion en cours..." : "Se connecter"}
+              {loading ? "Logging in..." : "Log In"}
             </Button>
           </form>
 
           <p className="text-center mt-6 text-muted-foreground">
-            Pas encore de compte ?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-primary font-medium hover:underline">
-              S'inscrire
+              Sign Up
             </Link>
           </p>
         </div>

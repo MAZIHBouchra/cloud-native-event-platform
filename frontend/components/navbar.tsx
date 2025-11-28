@@ -5,14 +5,23 @@ import { useState } from "react"
 import Link from "next/link"
 import { Menu, X, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/hooks/use-auth" // Import du hook
 
+// On garde les props optionnels pour la compatibilité, mais on utilise le hook en priorité
 interface NavbarProps {
   isLoggedIn?: boolean
   userName?: string
 }
 
-export function Navbar({ isLoggedIn = false, userName = "User" }: NavbarProps) {
+export function Navbar({ isLoggedIn: propIsLoggedIn, userName: propUserName }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  
+  // On utilise le hook pour récupérer l'utilisateur et la fonction logout
+  const { user, logout } = useAuth();
+
+  // Logique : On utilise les infos du hook (prioritaire) ou les props
+  const isUserLoggedIn = !!user || propIsLoggedIn;
+  const displayUserName = user?.email?.split('@')[0] || propUserName || "User";
 
   return (
     <nav className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
@@ -33,8 +42,8 @@ export function Navbar({ isLoggedIn = false, userName = "User" }: NavbarProps) {
           <Link href="/events" className="text-foreground hover:text-primary transition">
             Browse Events
           </Link>
-          {isLoggedIn && (
-            <Link href="/dashboard" className="text-foreground hover:text-primary transition">
+          {isUserLoggedIn && user?.role === 'ORGANIZER' && (
+            <Link href="/dashboard/organizer" className="text-foreground hover:text-primary transition">
               Dashboard
             </Link>
           )}
@@ -42,10 +51,11 @@ export function Navbar({ isLoggedIn = false, userName = "User" }: NavbarProps) {
 
         {/* Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          {isLoggedIn ? (
+          {isUserLoggedIn ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-foreground">Welcome, {userName}</span>
-              <Button variant="outline" size="sm">
+              <span className="text-sm text-foreground">Welcome, {displayUserName}</span>
+              {/* BOUTON LOGOUT CONNECTÉ */}
+              <Button variant="outline" size="sm" onClick={logout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
@@ -81,14 +91,13 @@ export function Navbar({ isLoggedIn = false, userName = "User" }: NavbarProps) {
           <Link href="/events" className="py-2 text-foreground hover:text-primary">
             Browse Events
           </Link>
-          {isLoggedIn && (
-            <Link href="/dashboard" className="py-2 text-foreground hover:text-primary">
-              Dashboard
-            </Link>
-          )}
+          
           <div className="pt-2 border-t border-border flex flex-col gap-2">
-            {isLoggedIn ? (
-              <Button className="w-full bg-destructive">Logout</Button>
+            {isUserLoggedIn ? (
+               // BOUTON LOGOUT MOBILE
+              <Button className="w-full bg-destructive" onClick={logout}>
+                Logout
+              </Button>
             ) : (
               <>
                 <Link href="/login" className="w-full">

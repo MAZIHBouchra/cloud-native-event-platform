@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/hooks/use-auth" // Vient de main
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Edit2, Trash2, Users } from "lucide-react"
 import Link from "next/link"
 
-// 1. Définition du type pour un objet "Event"
+// 1. Event Type Definition
 interface Event {
   id: string;
   title: string;
@@ -19,23 +19,20 @@ interface Event {
 }
 
 export default function OrganizerDashboardPage() {
-  // 2. COMBINAISON DES HOOKS
-  // On récupère l'utilisateur (depuis la branche auth)
   const { user } = useAuth()
   
-  // On gère l'état des événements (depuis la branche events)
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 3. Récupération des données API (Logique de HEAD)
+  // 3. Fetch Data from API
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const response = await fetch("http://localhost:8080/api/events")
 
         if (!response.ok) {
-          throw new Error("La réponse du réseau n'était pas valide.")
+          throw new Error("Network response was not valid.")
         }
 
         const data = await response.json()
@@ -65,35 +62,44 @@ export default function OrganizerDashboardPage() {
     CANCELLED: "bg-red-100 text-red-800",
   }
 
-  // Fonction de suppression (Logique de HEAD)
+  // --- DELETE FUNCTION (With Token) ---
   const handleDelete = async (eventId: string) => {
-    if (!window.confirm("Êtes-vous certain de vouloir supprimer cet événement ? Cette action est irréversible.")) {
+    if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
       return;
     }
 
     try {
+      const token = localStorage.getItem("authToken");
+
       const response = await fetch(`http://localhost:8080/api/events/${eventId}`, {
         method: "DELETE",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        }
       });
 
       if (!response.ok) {
-        throw new Error("La suppression de l'événement a échoué.");
+        if (response.status === 401) {
+            throw new Error("Session expired or unauthorized.");
+        }
+        throw new Error("Failed to delete the event.");
       }
 
       setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
-      console.log("Événement supprimé avec succès !");
+      console.log("Event deleted successfully!");
 
     } catch (err: any) {
       setError(err.message);
       console.error(err.message);
     }
   };
+  // ----------------------------------------
 
-  // 4. Affichage conditionnel (Chargement / Erreur)
   if (loading) {
     return (
         <div className="flex justify-center items-center min-h-screen">
-            <p>Chargement des événements...</p>
+            <p>Loading events...</p>
         </div>
     )
   }
@@ -101,50 +107,47 @@ export default function OrganizerDashboardPage() {
   if (error) {
     return (
         <div className="flex justify-center items-center min-h-screen text-red-500">
-            <p>Erreur lors de la récupération des données : {error}</p>
+            <p>Error: {error}</p>
         </div>
     )
   }
 
-  // 5. Rendu principal
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Navbar dynamique (Vient de main) */}
       <Navbar 
         isLoggedIn={true} 
-        userName={user?.email ? user.email.split('@')[0] : "Organisateur"} 
+        userName={user?.email ? user.email.split('@')[0] : "Organizer"} 
       />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-12">
         <div className="flex justify-between items-start mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Organizer Dashboard</h1>
-            <p className="text-muted-foreground">Créez et gérez vos événements</p>
+            <p className="text-muted-foreground">Create and manage your events</p>
           </div>
           <Link href="/dashboard/organizer/create-event">
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-5 h-5 mr-2" />
-              Créer un événement
+              Create Event
             </Button>
           </Link>
         </div>
 
         <Tabs defaultValue="events" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="events">Mes Événements</TabsTrigger>
+            <TabsTrigger value="events">My Events</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
           </TabsList>
 
-          {/* Onglet des Événements */}
           <TabsContent value="events" className="mt-8">
             <div className="overflow-x-auto bg-card border border-border rounded-lg">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Titre de l'événement</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Event Title</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Statut</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Inscriptions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Registrations</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -167,12 +170,12 @@ export default function OrganizerDashboardPage() {
                         <Link href={`/dashboard/organizer/edit-event/${event.id}`}>
                             <Button variant="outline" size="sm">
                             <Edit2 className="w-4 h-4 mr-1" />
-                            Modifier
+                            Edit
                             </Button>
                         </Link>
                         <Button variant="destructive" size="sm" onClick={() => handleDelete(event.id)}>
                           <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
+                          Delete
                         </Button>
                       </td>
                     </tr>
@@ -181,13 +184,12 @@ export default function OrganizerDashboardPage() {
               </table>
               {events.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">
-                  Vous n'avez encore créé aucun événement.
+                  You haven't created any events yet.
                 </div>
               )}
             </div>
           </TabsContent>
 
-          {/* Onglet des Participants */}
           <TabsContent value="participants" className="mt-8">
             <div className="space-y-4">
               {events.map((event) => (
@@ -196,11 +198,11 @@ export default function OrganizerDashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="w-5 h-5" />
-                      <span>{event.registrations} participant(s) inscrit(s)</span>
+                      <span>{event.registrations} registered participant(s)</span>
                     </div>
                     <Link href={`/dashboard/organizer/event/${event.id}/participants`}>
                       <Button variant="outline" size="sm">
-                        Voir les participants
+                        View Participants
                       </Button>
                     </Link>
                   </div>
@@ -208,7 +210,7 @@ export default function OrganizerDashboardPage() {
               ))}
               {events.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">
-                  Aucun événement à afficher.
+                  No events to display.
                 </div>
               )}
             </div>

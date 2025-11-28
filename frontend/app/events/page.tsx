@@ -1,4 +1,3 @@
-// Events browse page with filtering and search
 "use client"
 
 import { useState } from "react"
@@ -7,8 +6,11 @@ import { Footer } from "@/components/footer"
 import { EventCard } from "@/components/event-card"
 import { useEvents } from "@/lib/hooks/use-events"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/hooks/use-auth" // Import Auth
 
 export default function EventsPage() {
+  const { user } = useAuth() // On récupère l'info utilisateur
+  
   const [filters, setFilters] = useState({
     city: "",
     category: "",
@@ -22,7 +24,11 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar isLoggedIn={false} />
+      {/* NAVBAR DYNAMIQUE */}
+      <Navbar 
+        isLoggedIn={!!user} 
+        userName={user?.email ? user.email.split('@')[0] : "User"} 
+      />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-12">
         <h1 className="text-4xl font-bold mb-8">Browse Events</h1>

@@ -74,4 +74,8 @@ public class RegistrationService {
         // On supprime l'inscription
         registrationRepository.delete(registration);
     }
+
+    public List<Registration> getEventRegistrations(Long eventId) {
+        return registrationRepository.findByEventId(eventId);
+    }
 }
