@@ -1,4 +1,3 @@
-// Sign up page with registration form and validation
 "use client"
 
 import type React from "react"
@@ -15,6 +14,7 @@ import { cn } from "@/lib/utils"
 export default function SignupPage() {
   const router = useRouter()
   const { register, loading, error } = useAuth()
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -22,6 +22,7 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   })
+  
   const [role, setRole] = useState<"PARTICIPANT" | "ORGANIZER">("PARTICIPANT")
   const [formError, setFormError] = useState("")
 
@@ -38,17 +39,17 @@ export default function SignupPage() {
 
     // Validation
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setFormError("Please fill in all fields")
+      setFormError("Please fill in all fields.")
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setFormError("Passwords must match")
+      setFormError("Passwords do not match.")
       return
     }
 
     if (formData.password.length < 8) {
-      setFormError("Password must be at least 8 characters")
+      setFormError("Password must be at least 8 characters long.")
       return
     }
 
@@ -60,9 +61,11 @@ export default function SignupPage() {
        password: formData.password,
        role: role,
       });
-      router.push("/login")
+      // La redirection est souvent gérée dans le hook, mais on peut la forcer ici si besoin
+      router.push("/login") 
     } catch (err) {
-      setFormError(error || "Registration failed")
+      // Le hook gère l'erreur, mais on met à jour l'état local au cas où
+      setFormError(error || "Registration failed. Please try again.")
     }
   }
 
@@ -77,7 +80,7 @@ export default function SignupPage() {
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">Create Account</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Join EventHub to discover amazing events or host your own experiences.
+                  Join Adray ⴰⴷⵔⴰⵢ to discover amazing events or host your own experiences.
                 </p>
               </div>
 
@@ -145,6 +148,7 @@ export default function SignupPage() {
                       onChange={handleChange}
                       placeholder="John"
                       className="mt-2 w-full rounded-lg border border-border bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
                     />
                   </label>
 
@@ -157,6 +161,7 @@ export default function SignupPage() {
                       onChange={handleChange}
                       placeholder="Doe"
                       className="mt-2 w-full rounded-lg border border-border bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
                     />
                   </label>
                 </div>
@@ -170,6 +175,7 @@ export default function SignupPage() {
                     onChange={handleChange}
                     placeholder="you@example.com"
                     className="mt-2 w-full rounded-lg border border-border bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
                   />
                 </label>
 
@@ -183,6 +189,7 @@ export default function SignupPage() {
                       onChange={handleChange}
                       placeholder="Minimum 8 characters"
                       className="mt-2 w-full rounded-lg border border-border bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
                     />
                   </label>
                   <label className="text-sm font-medium text-foreground">
@@ -194,6 +201,7 @@ export default function SignupPage() {
                       onChange={handleChange}
                       placeholder="Confirm your password"
                       className="mt-2 w-full rounded-lg border border-border bg-input px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
                     />
                   </label>
                 </div>
@@ -206,7 +214,7 @@ export default function SignupPage() {
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link href="/login" className="font-semibold text-primary hover:underline">
-                  Sign In
+                  Log In
                 </Link>
               </p>
             </div>

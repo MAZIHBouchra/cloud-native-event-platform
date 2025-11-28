@@ -4,6 +4,7 @@ import com.convene.api.dtos.EventRequestDTO;
 import com.convene.api.dtos.EventResponseDtos;
 import com.convene.api.models.Event;
 import com.convene.api.repositories.EventRepository;
+import com.convene.api.repositories.RegistrationRepository; // <--- NOUVEL IMPORT
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -18,75 +19,55 @@ import java.util.Optional;
 public class EventService {
 
     private final EventRepository eventRepository;
-    private final S3Service s3Service; // Injection du service S3 de Salma
+    private final RegistrationRepository registrationRepository; // <--- NOUVELLE DÉPENDANCE
+    private final S3Service s3Service;
 
-    // Constructeur avec injection des dépendances
-    public EventService(EventRepository eventRepository, S3Service s3Service) {
+    // Mise à jour du constructeur pour inclure RegistrationRepository
+    public EventService(EventRepository eventRepository, 
+                        RegistrationRepository registrationRepository, 
+                        S3Service s3Service) {
         this.eventRepository = eventRepository;
+        this.registrationRepository = registrationRepository;
         this.s3Service = s3Service;
     }
 
-    /**
-     * Crée un nouvel événement avec upload d'image vers S3.
-     */
+    // ... (createEvent, getEvents, getEvent, updateEvent restent identiques) ...
+    // Je vous remets createEvent pour être sûr que le fichier soit complet
+    
     public Event createEvent(EventRequestDTO eventDTO, MultipartFile imageFile) throws IOException {
         String imageUrl = null;
-        
-        // Gestion de l'image via le S3Service de Salma
         if (imageFile != null && !imageFile.isEmpty()) {
-            // On appelle uploadImage avec le fichier et le nom du dossier "events"
             imageUrl = s3Service.uploadImage(imageFile, "events");
         }
 
         Event event = new Event();
-        // Mappage DTO -> Entity
         event.setTitle(eventDTO.getTitle());
         event.setDescription(eventDTO.getDescription());
         event.setCategory(eventDTO.getCategory());
-        // Conversion String -> LocalDate
         event.setEventDate(LocalDate.parse(eventDTO.getEventDate()));
         event.setTotalSeats(eventDTO.getTotalSeats());
-        
-        // Sauvegarde de l'URL S3 (ou null si pas d'image)
-        event.setImageUrl(imageUrl); 
-        
+        event.setImageUrl(imageUrl);
         event.setLocationCity(eventDTO.getCity());
         event.setLocationAddress(eventDTO.getAddress());
-
-        // Champs gérés par le backend
-        event.setOrganizerId(1L); // TODO: Plus tard, récupérer l'ID depuis le token
+        event.setOrganizerId(1L); 
         event.setAvailableSeats(eventDTO.getTotalSeats());
         event.setStatus("PUBLISHED");
 
         return eventRepository.save(event);
     }
 
-    /**
-     * Recherche publique des événements.
-     */
-    public List<EventResponseDtos> getEvents(
-            String search, String category, String city, LocalDate startDate, LocalDate endDate) {
-
+    public List<EventResponseDtos> getEvents(String search, String category, String city, LocalDate startDate, LocalDate endDate) {
         String normalizedSearch = normalize(search);
         String normalizedCategory = normalize(category);
         String normalizedCity = normalize(city);
-
-        List<Event> events = eventRepository.searchEvents(
-                "PUBLISHED", normalizedCategory, normalizedCity, startDate, endDate, normalizedSearch);
-
+        List<Event> events = eventRepository.searchEvents("PUBLISHED", normalizedCategory, normalizedCity, startDate, endDate, normalizedSearch);
         return events.stream().map(this::toResponse).toList();
     }
 
-    /**
-     * Récupère un événement par ID.
-     */
     public Optional<EventResponseDtos> getEvent(Long id) {
         return eventRepository.findByIdAndStatus(id, "PUBLISHED").map(this::toResponse);
     }
 
-    /**
-     * Met à jour un événement.
-     */
     @Transactional
     public Optional<EventResponseDtos> updateEvent(Long id, EventResponseDtos eventDetails) {
         return eventRepository.findById(id).map(existingEvent -> {
@@ -100,27 +81,27 @@ public class EventService {
             existingEvent.setTotalSeats(eventDetails.totalSeats());
             existingEvent.setAvailableSeats(eventDetails.availableSeats());
             existingEvent.setStatus(eventDetails.status());
-
             Event savedEvent = eventRepository.save(existingEvent);
             return toResponse(savedEvent);
         });
     }
 
-    /**
-     * Supprime un événement.
-     */
+    // =================================================================
+    // 👇 LA CORRECTION EST ICI
+    // =================================================================
     @Transactional
     public boolean deleteEvent(Long id) {
         if (eventRepository.existsById(id)) {
-            // Optionnel : On pourrait aussi supprimer l'image de S3 ici
-            // Mais pour l'instant, on supprime juste l'événement de la BDD
+            // 1. D'abord, on supprime les inscriptions liées (pour éviter l'erreur Foreign Key)
+            registrationRepository.deleteByEventId(id);
+
+            // 2. Ensuite, on supprime l'événement
             eventRepository.deleteById(id);
             return true;
         }
         return false;
     }
-
-    // --- Méthodes Utilitaires ---
+    // =================================================================
 
     private EventResponseDtos toResponse(Event event) {
         return new EventResponseDtos(

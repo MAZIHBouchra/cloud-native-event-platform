@@ -1,7 +1,7 @@
 // frontend/lib/hooks/use-auth.ts
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 // Définition de la structure d'un objet Utilisateur
@@ -18,6 +18,27 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // --- NOUVEAU : Restauration de la session au chargement (F5) ---
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("authToken");
+      const role = localStorage.getItem("userRole") as "PARTICIPANT" | "ORGANIZER";
+      const email = localStorage.getItem("userEmail");
+
+      // Si on a les infos, on reconnecte l'utilisateur silencieusement
+      if (token && role) {
+        setUser({
+          id: token,
+          email: email || "User",
+          firstName: "",
+          lastName: "",
+          role: role
+        });
+      }
+    }
+  }, []);
+  // -------------------------------------------------------------
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true)
@@ -37,10 +58,7 @@ export function useAuth() {
 
       const data = await response.json()
       
-      // --- DEBUG : AFFICHER LE RÔLE DANS LA CONSOLE ---
-      console.log("📢 Login réussi ! Données reçues du Backend :", data);
-      console.log("📢 Rôle détecté :", data.role);
-      // ------------------------------------------------
+      console.log("📢 Login réussi ! Rôle détecté :", data.role);
 
       const loggedUser: User = {
         id: data.accessToken,
@@ -53,19 +71,20 @@ export function useAuth() {
       // Mise à jour de l'état
       setUser(loggedUser)
       
-      // Stockage du token
+      // Stockage du token ET de l'email (pour la persistance)
       if (typeof window !== "undefined") {
         localStorage.setItem("authToken", data.accessToken)
         localStorage.setItem("userRole", data.role)
+        localStorage.setItem("userEmail", email) // <-- Ajouté pour garder le nom
       }
 
-      // --- CORRECTION DE LA REDIRECTION ---
+      // Redirection (Votre logique exacte conservée)
       if (loggedUser.role === "ORGANIZER") {
           console.log("👉 Redirection vers le tableau de bord Organisateur");
-          router.push("/dashboard/organizer"); // LA BONNE ROUTE
+          router.push("/dashboard/organizer");
       } else {
           console.log("👉 Redirection vers le tableau de bord Participant");
-          router.push("/dashboard"); // OU "/events" selon votre structure
+          router.push("/dashboard"); 
       }
 
       return loggedUser
@@ -122,6 +141,7 @@ export function useAuth() {
     if (typeof window !== "undefined") {
         localStorage.removeItem("authToken");
         localStorage.removeItem("userRole");
+        localStorage.removeItem("userEmail"); // <-- On nettoie aussi l'email
     }
     router.push("/login");
   }, [router])

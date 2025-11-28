@@ -26,7 +26,7 @@ interface Event {
 interface Registration {
   id: number;
   status: string;
-  event: Event; // L'objet Registration contient l'objet Event complet
+  event: Event;
 }
 
 export default function ParticipantDashboard() {
@@ -52,19 +52,16 @@ export default function ParticipantDashboard() {
       // Appel 1 : Tous les événements publiés
       const eventsRes = await fetch("http://localhost:8080/api/events", { headers })
       const eventsData = await eventsRes.json()
-      // Sécurité : On vérifie que c'est bien un tableau
       setAvailableEvents(Array.isArray(eventsData) ? eventsData : [])
 
       // Appel 2 : Mes inscriptions
       const regRes = await fetch("http://localhost:8080/api/registrations/me", { headers })
       const regData = await regRes.json()
-      // Sécurité : On vérifie que c'est bien un tableau
       setMyRegistrations(Array.isArray(regData) ? regData : [])
 
     } catch (err) {
       console.error(err)
-      setError("Impossible de charger les événements.")
-      // En cas d'erreur, on met des tableaux vides pour éviter le crash
+      setError("Failed to load events.")
       setAvailableEvents([])
       setMyRegistrations([])
     } finally {
@@ -87,20 +84,20 @@ export default function ParticipantDashboard() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        alert(errorData.error || "Erreur lors de l'inscription")
+        alert(errorData.error || "Registration failed")
         return
       }
 
-      alert("Inscription réussie !")
-      fetchData() // On recharge les données pour mettre à jour les places et la liste
+      alert("Successfully registered!")
+      fetchData() // Recharge les données
     } catch (e) {
-      alert("Erreur technique lors de l'inscription")
+      alert("Technical error during registration")
     }
   }
 
   // 4. Action : Se désinscrire
   const handleUnregister = async (eventId: number) => {
-    if (!confirm("Voulez-vous vraiment annuler votre inscription ?")) return
+    if (!confirm("Are you sure you want to cancel your registration?")) return
 
     try {
       const token = localStorage.getItem("authToken")
@@ -109,23 +106,22 @@ export default function ParticipantDashboard() {
         headers: { "Authorization": `Bearer ${token}` }
       })
 
-      if (!response.ok) throw new Error("Erreur")
+      if (!response.ok) throw new Error("Error")
 
-      alert("Désinscription confirmée.")
-      fetchData() // On recharge
+      alert("Registration cancelled.")
+      fetchData()
     } catch (e) {
-      alert("Impossible de se désinscrire.")
+      alert("Failed to cancel registration.")
     }
   }
 
-  // Helper : Vérifier si l'utilisateur est déjà inscrit à un event donné
+  // Helper : Vérifier si inscrit
   const isRegistered = (eventId: number) => {
-    // Sécurité : Si myRegistrations est undefined ou null
     if (!Array.isArray(myRegistrations)) return false;
     return myRegistrations.some(reg => reg.event.id === eventId)
   }
 
-  if (loading) return <div className="p-10 text-center">Chargement...</div>
+  if (loading) return <div className="p-10 text-center text-muted-foreground">Loading dashboard...</div>
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -133,98 +129,101 @@ export default function ParticipantDashboard() {
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Espace Participant</h1>
-          <p className="text-muted-foreground">Gérez vos événements et découvrez-en de nouveaux.</p>
+          <h1 className="text-3xl font-bold">Participant Dashboard</h1>
+          <p className="text-muted-foreground">Manage your events and discover new ones.</p>
         </div>
 
         <Tabs defaultValue="browse" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
-            <TabsTrigger value="browse">Parcourir les événements</TabsTrigger>
-            <TabsTrigger value="my-events">Mes Inscriptions ({myRegistrations.length})</TabsTrigger>
+            <TabsTrigger value="browse">Browse Events</TabsTrigger>
+            <TabsTrigger value="my-events">My Registrations ({myRegistrations.length})</TabsTrigger>
           </TabsList>
 
-          {/* ONGLET 1 : TOUS LES ÉVÉNEMENTS */}
+          {/* TAB 1 : BROWSE EVENTS */}
           <TabsContent value="browse" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {availableEvents.map(event => {
                 const registered = isRegistered(event.id)
                 return (
                   <div key={event.id} className="bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
-                    {/* Image Placeholder si pas d'image */}
-                    <div className="h-40 bg-gray-200 w-full object-cover relative">
+                    {/* Image Placeholder */}
+                    <div className="h-40 bg-gray-100 w-full object-cover relative flex items-center justify-center">
                        {event.imageUrl ? (
                            <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                        ) : (
-                           <div className="flex items-center justify-center h-full text-gray-400">Pas d'image</div>
+                           <span className="text-gray-400 text-sm">No Image</span>
                        )}
-                       <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold shadow">
-                         {event.availableSeats} places restantes
+                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold shadow-sm text-foreground">
+                         {event.availableSeats} seats left
                        </div>
                     </div>
                     
                     <div className="p-5">
-                      <h3 className="font-bold text-lg mb-2">{event.title}</h3>
+                      <h3 className="font-bold text-lg mb-2 truncate">{event.title}</h3>
                       <div className="flex items-center text-sm text-muted-foreground mb-1">
                         <Calendar className="w-4 h-4 mr-2" />
                         {new Date(event.eventDate).toLocaleDateString()}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground mb-4">
                         <MapPin className="w-4 h-4 mr-2" />
-                        {/* On essaie d'abord locationCity, sinon on prend city */}
-                        {event.locationCity || event.city || "Lieu non précisé"}
+                        {event.locationCity || event.city || "Online / TBD"}
                       </div>
 
                       {registered ? (
-                        <Button disabled className="w-full bg-green-600 text-white opacity-100">
-                          <Ticket className="w-4 h-4 mr-2" /> Déjà inscrit
+                        <Button disabled className="w-full bg-green-600/90 text-white opacity-100 cursor-default">
+                          <Ticket className="w-4 h-4 mr-2" /> Registered
                         </Button>
                       ) : event.availableSeats > 0 ? (
-                        <Button onClick={() => handleRegister(event.id)} className="w-full">
-                          S'inscrire
+                        <Button onClick={() => handleRegister(event.id)} className="w-full bg-primary hover:bg-primary/90">
+                          Register Now
                         </Button>
                       ) : (
                         <Button disabled variant="secondary" className="w-full">
-                          Complet
+                          Sold Out
                         </Button>
                       )}
                     </div>
                   </div>
                 )
               })}
-              {availableEvents.length === 0 && <p>Aucun événement disponible pour le moment.</p>}
+              {availableEvents.length === 0 && (
+                  <div className="col-span-full text-center py-12 text-muted-foreground">
+                      No events available at the moment.
+                  </div>
+              )}
             </div>
           </TabsContent>
 
-          {/* ONGLET 2 : MES INSCRIPTIONS */}
+          {/* TAB 2 : MY REGISTRATIONS */}
           <TabsContent value="my-events">
             <div className="space-y-4">
               {myRegistrations.map(reg => (
-                <div key={reg.id} className="bg-card border rounded-lg p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div key={reg.id} className="bg-card border rounded-lg p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
                   <div>
                     <h3 className="text-xl font-bold">{reg.event.title}</h3>
                     <p className="text-muted-foreground flex items-center mt-1">
                       <Calendar className="w-4 h-4 mr-2" /> 
-                      {new Date(reg.event.eventDate).toLocaleDateString()} à {reg.event.locationCity}
+                      {new Date(reg.event.eventDate).toLocaleDateString()} • {reg.event.locationCity || "Online"}
                     </p>
-                    <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      Confirmé
+                    <span className="inline-flex items-center mt-3 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Confirmed
                     </span>
                   </div>
                   
                   <Button 
                     variant="outline" 
                     onClick={() => handleUnregister(reg.event.id)} 
-                    className="text-red-600 border-red-200 hover:bg-red-50"
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                   >
-                    Se désinscrire
+                    Cancel Registration
                   </Button>
                 </div>
               ))}
               {myRegistrations.length === 0 && (
-                <div className="text-center p-12 border-2 border-dashed rounded-xl">
-                  <AlertCircle className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <h3 className="text-lg font-medium">Aucune inscription</h3>
-                  <p className="text-muted-foreground">Vous n'êtes inscrit à aucun événement pour le moment.</p>
+                <div className="text-center p-12 border-2 border-dashed border-border rounded-xl">
+                  <AlertCircle className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-50" />
+                  <h3 className="text-lg font-medium text-foreground">No registrations yet</h3>
+                  <p className="text-muted-foreground mt-1">You haven't registered for any events.</p>
                 </div>
               )}
             </div>
