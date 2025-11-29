@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { API_BASE_URL } from "@/lib/config";
 
 // On définit la structure des données attendues
 interface LoginRequest {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // 2. C'EST ICI LA CLÉ : On appelle le Backend Java (Spring Boot)
     // Au lieu de regarder dans le mock-db local
-    const backendUrl = "http://localhost:8080/api/auth/signin";
+    const backendUrl = `${API_BASE_URL}/api/auth/signin`;
 
     const response = await fetch(backendUrl, {
       method: "POST",
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Erreur serveur Next.js:", error);
     return NextResponse.json(
-      { error: "Impossible de contacter le serveur Java (Vérifiez le port 8080)" },
+      { error: "Impossible de contacter le serveur backend" },
       { status: 500 }
     );
   }

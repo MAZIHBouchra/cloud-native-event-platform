@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "EventHub - Event Registration Platform",
+  title: "Adray ⴰⴷⵔⴰⵢ",
   description: "Discover and register for amazing events near you",
   generator: "v0.app",
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { API_BASE_URL } from "@/lib/config"
 
 // Interface des données
 interface EventData {
@@ -44,7 +45,7 @@ export default function EditEventPage() {
 
     const fetchEventDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/events/${eventId}`);
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
         if (!response.ok) {
           throw new Error("Impossible de récupérer les détails de l'événement.");
         }
@@ -86,7 +87,7 @@ export default function EditEventPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8080/api/events/${eventId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

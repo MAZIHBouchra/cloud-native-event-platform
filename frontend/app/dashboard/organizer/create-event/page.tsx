@@ -10,6 +10,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import axios from "axios" // Pour les requêtes HTTP
+import { API_BASE_URL } from "@/lib/config"
 
 export default function CreateEventPage() {
   const router = useRouter()
@@ -84,8 +85,8 @@ export default function CreateEventPage() {
     }
 
     try {
-      // Envoi au Backend sur le port 8080
-      const response = await axios.post("http://localhost:8080/api/events", data, {
+      // Envoi au Backend AWS
+      const response = await axios.post(`${API_BASE_URL}/api/events`, data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

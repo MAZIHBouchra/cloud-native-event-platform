@@ -30,8 +30,10 @@ public class SecurityConfig {
 
             // 3. Configuration des accès URL
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/health").permitAll() // Health check endpoint
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/events/**").permitAll() // Lecture publique des événements
+                .requestMatchers("/api/images/**").permitAll() // Allow image uploads
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated() // Le reste (Inscriptions) nécessite un Token
             )
@@ -47,10 +49,23 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Allow all origins (for development/testing - restrict in production)
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        
+        // Allow all HTTP methods
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"));
+        
+        // Allow all headers
         configuration.setAllowedHeaders(List.of("*"));
+        
+        // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
+        
+        // Expose all response headers to the client
+        configuration.setExposedHeaders(List.of("*"));
+        
+        // Cache preflight requests for 1 hour
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

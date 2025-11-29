@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/hooks/use-auth"
 import Link from "next/link"
 import { ArrowLeft, Mail, User, Calendar } from "lucide-react"
+import { API_BASE_URL } from "@/lib/config"
 
 interface Registration {
   id: number;
@@ -31,7 +32,7 @@ export default function EventParticipantsPage() {
         const token = localStorage.getItem("authToken");
         
         // Appel au backend
-        const response = await fetch(`http://localhost:8080/api/registrations/event/${eventId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/registrations/event/${eventId}`, {
             headers: {
                 "Authorization": `Bearer ${token}`
             }

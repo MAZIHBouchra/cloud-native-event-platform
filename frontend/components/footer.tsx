@@ -98,7 +98,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-          <p>&copy; 2025 EventHub. All rights reserved.</p>
+          <p>&copy; 2025 Adray ⴰⴷⵔⴰⵢ. All rights reserved.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <a href="#" className="hover:text-primary transition">
               Twitter

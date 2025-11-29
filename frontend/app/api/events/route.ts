@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-
-const API_BASE_URL = process.env.EVENTS_API_URL ?? process.env.NEXT_PUBLIC_EVENTS_API_URL ?? "http://localhost:8080"
+import { API_BASE_URL } from "@/lib/config"
 
 interface BackendEvent {
   id: string

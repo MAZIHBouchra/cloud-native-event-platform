@@ -3,6 +3,7 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { API_BASE_URL } from "@/lib/config"
 
 // Définition de la structure d'un objet Utilisateur
 export interface User {
@@ -45,7 +46,7 @@ export function useAuth() {
     setError(null)
     try {
       // Appel au backend Java
-      const response = await fetch("http://localhost:8080/api/auth/signin", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -109,7 +110,7 @@ export function useAuth() {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch("http://localhost:8080/api/auth/signup", {
+        const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data), 

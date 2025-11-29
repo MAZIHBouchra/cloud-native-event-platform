@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, MapPin, Ticket, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { API_BASE_URL } from "@/lib/config"
 
 // 1. Définition des types selon votre Backend Java
 interface Event {
@@ -50,12 +51,12 @@ export default function ParticipantDashboard() {
       }
 
       // Appel 1 : Tous les événements publiés
-      const eventsRes = await fetch("http://localhost:8080/api/events", { headers })
+      const eventsRes = await fetch(`${API_BASE_URL}/api/events`, { headers })
       const eventsData = await eventsRes.json()
       setAvailableEvents(Array.isArray(eventsData) ? eventsData : [])
 
       // Appel 2 : Mes inscriptions
-      const regRes = await fetch("http://localhost:8080/api/registrations/me", { headers })
+      const regRes = await fetch(`${API_BASE_URL}/api/registrations/me`, { headers })
       const regData = await regRes.json()
       setMyRegistrations(Array.isArray(regData) ? regData : [])
 
@@ -77,7 +78,7 @@ export default function ParticipantDashboard() {
   const handleRegister = async (eventId: number) => {
     try {
       const token = localStorage.getItem("authToken")
-      const response = await fetch(`http://localhost:8080/api/registrations/${eventId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/registrations/${eventId}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       })
@@ -101,7 +102,7 @@ export default function ParticipantDashboard() {
 
     try {
       const token = localStorage.getItem("authToken")
-      const response = await fetch(`http://localhost:8080/api/registrations/${eventId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/registrations/${eventId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       })

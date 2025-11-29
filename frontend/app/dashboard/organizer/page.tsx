@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Edit2, Trash2, Users } from "lucide-react"
 import Link from "next/link"
+import { API_BASE_URL } from "@/lib/config"
 
 // 1. Event Type Definition
 interface Event {
@@ -29,7 +30,7 @@ export default function OrganizerDashboardPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/events")
+        const response = await fetch(`${API_BASE_URL}/api/events`)
 
         if (!response.ok) {
           throw new Error("Network response was not valid.")
@@ -71,7 +72,7 @@ export default function OrganizerDashboardPage() {
     try {
       const token = localStorage.getItem("authToken");
 
-      const response = await fetch(`http://localhost:8080/api/events/${eventId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
         method: "DELETE",
         headers: {
             "Authorization": `Bearer ${token}`,
